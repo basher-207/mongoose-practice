@@ -2,20 +2,89 @@ const Article = require('../models/articleModel');
 const { articleFilter } = require('./filter/articleFilter');
 
 exports.getAllArticles = async (req, res) => {
-    if(Object.keys(req.query).length != 0){
-        const filteredData = await articleFilter(req.query, Article);
-        res.status(200).json(filteredData);
-        return;
+    let result;
+
+    Object.keys(req.query).length != 0 ?
+        result = await articleFilter(req.query, Article) :
+        result = await Article.find()
+
+    const data = {
+        status: "success",
+        data: {
+            "count": result.length,
+            "articles": result
+        }
+    };
+    res.status(200).json(data);
+};
+
+exports.getArticle = async (req, res) => {
+    let article = await Article.findById(req.params.id);
+    res.status(200).json(
+        {
+            "status": "success",
+            "data": {
+                "count": 1,
+                "articles": [
+                    article
+                ]
+            }
+        }
+    );
+};
+
+exports.postArticle = async (req, res) => {
+    try {
+        const {title, theme, description, comments} = req.body;
+        const newDocument = new Article({
+            title: title,
+            theme: theme,
+            description: description,
+            comments: comments
+        });
+
+        // Save the new document to the MongoDB collection
+        const savedDocument = await newDocument.save();
+
+        res.status(201).json(savedDocument); // Return the saved document
+    } catch (error) {
+        res.status(500).json({error: error.message});
     }
 };
 
-exports.getArticle = async () => {};
+exports.patchArticle = async (res, req) => {
+    const idToPatch = req.params.id;
+    const updateFields = req.body;
 
-exports.postArticle = async () => {};
+    try {
+        const updatedDocument = await Article.findByIdAndUpdate(
+            idToPatch,
+            updateFields,
+            {new: true} // Set to true to return the updated document
+        );
 
-exports.patchArticle = async () => {};
+        if (!updatedDocument) {
+            return res.status(404).json({message: 'Document not found'});
+        }
 
-exports.deleteArticle = async () => {};
+        res.json({message: 'Document patched', updatedDocument});
+    } catch (error) {
+        res.status(500).json({error: error.message});
+    }
+};
+
+exports.deleteArticle = async (req, res) => {
+    const idDelete = req.params.id;
+    try {
+        const deletedDocument = await Article.findByIdAndRemove(idDelete);
+        if (!deletedDocument) {
+            return res.status(404).json({message: 'Document not found'});
+        }
+        res.json({message: 'Document deleted', deletedDocument});
+    } catch (error) {
+        res.status(500).json({error: error.message});
+    }
+};
 
 exports.threeMostLiked = async (req, res) => {
     const querys = {fields: 'title,comments,likesQuantity,dislikesQuantity'};
@@ -42,7 +111,7 @@ exports.threeMostLiked = async (req, res) => {
             result: result
         }
     }
-    
+
     res.status(200).json(data);
 };
 
