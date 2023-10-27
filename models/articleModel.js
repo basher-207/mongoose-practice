@@ -26,7 +26,10 @@ const articleSchema = new mongoose.Schema({
     theme: {
         type: String,
         required: true,
-        enum: ['trips', 'shopping', 'beauty', 'art', 'food']
+        enum: {
+            values: ['trips', 'shopping', 'beauty', 'art', 'food'],
+            message: '{VALUE} is not supported'
+          }
     },
     description: {
         type: String,
