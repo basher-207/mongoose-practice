@@ -5,14 +5,14 @@ exports.getAllArticles = async (req, res) => {
     let result;
 
     Object.keys(req.query).length != 0 ?
-        result = await articleFilter(req.query, Article) :
-        result = await Article.find()
+    result = await articleFilter(req.query, Article) :
+    result = await Article.find()
 
     const data = {
         status: "success",
         data: {
-            "count": result.length,
-            "articles": result
+            count: result.length,
+            articles: result
         }
     };
     res.status(200).json(data);
@@ -20,39 +20,36 @@ exports.getAllArticles = async (req, res) => {
 
 exports.getArticle = async (req, res) => {
     let article = await Article.findById(req.params.id);
-    res.status(200).json(
-        {
-            "status": "success",
-            "data": {
-                "count": 1,
-                "articles": [
-                    article
-                ]
-            }
+    const data = {
+        status: "success",
+        data: {
+            count: 1,
+            article: article
         }
-    );
+    };
+    res.status(200).json(data);
 };
 
 exports.postArticle = async (req, res) => {
     try {
-        const {title, theme, description, comments} = req.body;
-        const newDocument = new Article({
-            title: title,
-            theme: theme,
-            description: description,
-            comments: comments
-        });
-
+        const newDocument = new Article(req.body);
         // Save the new document to the MongoDB collection
         const savedDocument = await newDocument.save();
 
-        res.status(201).json(savedDocument); // Return the saved document
+        const data = {
+            status: "success",
+            data: {
+                count: 1,
+                article: newDocument
+            }
+        };
+        res.status(201).json(data); // Return the saved document
     } catch (error) {
         res.status(500).json({error: error.message});
     }
 };
 
-exports.patchArticle = async (res, req) => {
+exports.patchArticle = async (req, res) => {
     const idToPatch = req.params.id;
     const updateFields = req.body;
 
@@ -67,7 +64,14 @@ exports.patchArticle = async (res, req) => {
             return res.status(404).json({message: 'Document not found'});
         }
 
-        res.json({message: 'Document patched', updatedDocument});
+        const data = {
+            status: "success",
+            data: {
+                count: 1,
+                article: updatedDocument
+            }
+        };
+        res.status(200).json(data);
     } catch (error) {
         res.status(500).json({error: error.message});
     }
@@ -80,7 +84,15 @@ exports.deleteArticle = async (req, res) => {
         if (!deletedDocument) {
             return res.status(404).json({message: 'Document not found'});
         }
-        res.json({message: 'Document deleted', deletedDocument});
+
+        const data = {
+            status: "success",
+            data: {
+                count: 1,
+                article: deletedDocument
+            }
+        };
+        res.status(204).json(data);
     } catch (error) {
         res.status(500).json({error: error.message});
     }
@@ -94,11 +106,13 @@ exports.threeMostLiked = async (req, res) => {
         return article = {
             title: article.title,
             commentsCount: article.comments.length,
-            rating: (article.likesQuantity + article.dislikesQuantity) / article.comments.length
+            rating: (article.likesQuantity - article.dislikesQuantity) / article.comments.length
         }
     });
 
-    result.sort((a, b) => {return b.rating - a.rating || a.title - b.title});
+    result.sort((a, b) => {
+        return b.rating - a.rating || a.title.localeCompare(b.title);
+    });
 
     if(req.query.limit){
         result = result.slice(0, req.query.limit);
@@ -116,6 +130,7 @@ exports.threeMostLiked = async (req, res) => {
 };
 
 exports.viewsCountByTheme = async (req, res) => {
+    const allArticles = await Article.find();
     const querys = {fields: 'theme'}
     const arrayOfThemesFields = await articleFilter(querys, Article);
     const arrayOfThemes = arrayOfThemesFields.map((el) => {
@@ -123,17 +138,15 @@ exports.viewsCountByTheme = async (req, res) => {
     });
     const themes = arrayOfThemes.filter((el, index) => {
         return arrayOfThemes.indexOf(el) === index;
-    })
-
-
-    const allArticles = await Article.find();
+    });
 
     const result = [];
     themes.forEach((theme) => {
         let a = {_id: theme , views: 0};
         allArticles.forEach((article) => {
             if(article.theme === theme){
-                a = {...a, views: a.views + article.comments.length};
+                
+                a.views += article.viewsCount;
                 return;
             }
             return;
@@ -141,13 +154,14 @@ exports.viewsCountByTheme = async (req, res) => {
         result.push(a);
     });
 
+    result.sort((a, b) => {return b.views - a.views});
+
     const data = {
         status: "success",
         data: {
             count: result.length,
             result: result
         }
-    }
-
+    };
     res.status(200).json(data);
 };
