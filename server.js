@@ -3,8 +3,8 @@ const dotenv = require('dotenv');
 const app = require('./app');
 
 dotenv.config({ path: './config.env' });
-const dbUsername = process.env.USERNAME;
-const dbPassword = process.env.PASSWORD;
+const dbUsername = process.env.DB_USERNAME;
+const dbPassword = process.env.DB_PASSWORD;
 const dbAdress = process.env.DB_ADDRESS;
 const dbName = process.env.DB_NAME;
 const db = `mongodb+srv://${dbUsername}:${dbPassword}@${dbAdress}/${dbName}?retryWrites=true&w=majority`;
