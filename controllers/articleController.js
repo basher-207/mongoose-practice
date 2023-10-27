@@ -46,4 +46,39 @@ exports.threeMostLiked = async (req, res) => {
     res.status(200).json(data);
 };
 
-exports.viewsCountByTheme = async () => {};
+exports.viewsCountByTheme = async (req, res) => {
+    const querys = {fields: 'theme'}
+    const arrayOfThemesFields = await articleFilter(querys, Article);
+    const arrayOfThemes = arrayOfThemesFields.map((el) => {
+        return el.theme;
+    });
+    const themes = arrayOfThemes.filter((el, index) => {
+        return arrayOfThemes.indexOf(el) === index;
+    })
+
+
+    const allArticles = await Article.find();
+
+    const result = [];
+    themes.forEach((theme) => {
+        let a = {_id: theme , views: 0};
+        allArticles.forEach((article) => {
+            if(article.theme === theme){
+                a = {...a, views: a.views + article.comments.length};
+                return;
+            }
+            return;
+        });
+        result.push(a);
+    });
+
+    const data = {
+        status: "success",
+        data: {
+            count: result.length,
+            result: result
+        }
+    }
+
+    res.status(200).json(data);
+};
