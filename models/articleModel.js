@@ -47,7 +47,7 @@ const articleSchema = new mongoose.Schema({
         likesQuantity: {
             get() {
                 const commentArrayWithLikes = this.comments.filter((comment) => {
-                    comment.evaluation === 'like'
+                    return comment.evaluation === 'like'
                 });
                 return commentArrayWithLikes.length;
             }
@@ -55,7 +55,7 @@ const articleSchema = new mongoose.Schema({
         dislikesQuantity: {
             get() {
                 const commentArrayWithDisikes = this.comments.filter((comment) => {
-                    comment.evaluation === 'dislike'
+                    return comment.evaluation === 'dislike'
                 });
                 return commentArrayWithDisikes.length;
             }
