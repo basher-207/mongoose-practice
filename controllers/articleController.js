@@ -69,7 +69,7 @@ exports.patchArticle = async (res, req) => {
 
         res.json({message: 'Document patched', updatedDocument});
     } catch (error) {
-        res.status(500).json({error: 'Server error'});
+        res.status(500).json({error: error.message});
     }
 };
 
@@ -82,7 +82,7 @@ exports.deleteArticle = async (req, res) => {
         }
         res.json({message: 'Document deleted', deletedDocument});
     } catch (error) {
-        res.status(500).json({error: 'Server error'});
+        res.status(500).json({error: error.message});
     }
 };
 
